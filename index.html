@@ -169,14 +169,40 @@
             margin-top: 5px;
         }
 
-        .hero-content p {
-            margin: 5px 0;
+        .ability-content {
+            margin-left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        /* Avatar (Player Head) viereckig mit abgerundeten Ecken */
+        .avatar {
+            border-radius: 8px;
+            width: 60px;
+            height: 60px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        /* Login-Button oben rechts */
+        #login-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="overlay"></div> <!-- Overlay für den Hintergrund -->
-    
+
     <div class="panel">
         <h1>FFA Stats</h1>
         <p class="info-text">⚠️ Du musst mindestens einmal im FFA-Modus gespielt haben, damit deine Stats abrufbar sind! ⚠️</p>
@@ -215,6 +241,9 @@
             const uuid = await fetchUUID(username);
             if (!uuid) return;
 
+            // Avatar URL abrufen
+            const avatarUrl = `https://crafatar.com/avatars/${uuid}?size=100`;
+
             try {
                 const response = await fetch(`https://api.hglabor.de/stats/ffa/${uuid}`);
                 if (!response.ok) throw new Error("Statistiken nicht gefunden!");
@@ -231,9 +260,11 @@
                             <div class="hero-header" onclick="toggleHero('${heroId}')">${heroName} ▼</div>
                             <div id="${heroId}" class="hero-content">`;
                     for (const ability in heroData) {
+                        heroHtml += `<div class="ability-content"><strong>${formatName(ability)}:</strong>`;
                         for (const attribute in heroData[ability]) {
-                            heroHtml += `<p><strong>${formatName(ability)} - ${formatName(attribute)}:</strong> ${heroData[ability][attribute].experiencePoints} XP</p>`;
+                            heroHtml += `<p><strong>${formatName(attribute)}:</strong> ${heroData[ability][attribute].experiencePoints} XP</p>`;
                         }
+                        heroHtml += "</div>";
                     }
                     heroHtml += "</div></div>";
                     return heroHtml;
@@ -244,20 +275,22 @@
                 }
 
                 document.getElementById("stats").innerHTML = `
-                    <h2>Stats für ${username}</h2>
+                    <h2><img src="${avatarUrl}" class="avatar" alt="Avatar">${username}</h2>
                     <p><strong>XP:</strong> ${stats.xp}</p>
                     <p><strong>Kills:</strong> ${stats.kills}</p>
                     <p><strong>Tode:</strong> ${stats.deaths}</p>
-                    <p><strong>K/D:</strong> ${(stats.kills / (stats.deaths || 1)).toFixed(2)}</p>
-                    <p><strong>Aktuelle Killstreak:</strong> ${stats.currentKillStreak}</p>
-                    <p><strong>Höchste Killstreak:</strong> ${stats.highestKillStreak}</p>
-                    <p><strong>Bounty:</strong> ${stats.bounty}</p>
-                    
-                    <h2>Helden-Fähigkeiten</h2>
-                    ${stats.heroes.aang ? renderHeroStats("Aang", stats.heroes.aang) : ""}
-                    ${stats.heroes.katara ? renderHeroStats("Katara", stats.heroes.katara) : ""}
-                    ${stats.heroes.toph ? renderHeroStats("Toph", stats.heroes.toph) : ""}
-                `;
+                    <p><strong>Aktuelle Kill Streak:</strong> ${stats.currentKillStreak}</p>
+                    <p><strong>Höchste Kill Streak:</strong> ${stats.highestKillStreak}</p>
+                    <p><strong>Bounty:</strong> ${stats.bounty}</p>`;
+
+                // Hero-Daten ausgeben
+                const heroes = stats.heroes;
+                if (heroes) {
+                    for (const hero in heroes) {
+                        document.getElementById("stats").innerHTML += renderHeroStats(hero, heroes[hero]);
+                    }
+                }
+
                 document.getElementById("stats").style.display = "block";
             } catch (error) {
                 document.getElementById("error").innerText = error.message;
@@ -266,13 +299,16 @@
 
         function toggleHero(heroId) {
             const heroContent = document.getElementById(heroId);
-            heroContent.style.display = heroContent.style.display === "block" ? "none" : "block";
+            heroContent.style.display = heroContent.style.display === "none" ? "block" : "none";
         }
 
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert(`${text} wurde in die Zwischenablage kopiert!`);
-            });
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = text;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
         }
     </script>
 </body>
